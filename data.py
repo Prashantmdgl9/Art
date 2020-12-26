@@ -3,6 +3,7 @@
 import os
 import numpy as np
 from PIL import Image
+'''
 
 # Defining an image size and image channel
 # We are going to resize all our images to 128X128 size and since our images are colored images
@@ -34,7 +35,7 @@ training_data = training_data / 127.5 - 1
 print('saving file...')
 np.save('cubism_data.npy', training_data)
 
-
+'''
 from keras.layers import Input, Reshape, Dropout, Dense, Flatten, BatchNormalization, Activation, ZeroPadding2D
 from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.convolutional import UpSampling2D, Conv2D
