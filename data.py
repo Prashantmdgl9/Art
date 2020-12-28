@@ -3,7 +3,6 @@
 import os
 import numpy as np
 from PIL import Image
-'''
 
 # Defining an image size and image channel
 # We are going to resize all our images to 128X128 size and since our images are colored images
@@ -35,7 +34,7 @@ training_data = training_data / 127.5 - 1
 print('saving file...')
 np.save('cubism_data.npy', training_data)
 
-'''
+
 from keras.layers import Input, Reshape, Dropout, Dense, Flatten, BatchNormalization, Activation, ZeroPadding2D
 from keras.layers.advanced_activations import LeakyReLU
 from keras.layers.convolutional import UpSampling2D, Conv2D
@@ -50,7 +49,7 @@ SAVE_FREQ = 100
 # Size vector to generate images from
 NOISE_SIZE = 100
 # Configuration
-EPOCHS = 10000 # number of iterations
+EPOCHS = 100 # number of iterations
 BATCH_SIZE = 32
 GENERATE_RES = 3
 IMAGE_SIZE = 128 # rows/cols
@@ -120,6 +119,31 @@ def build_generator(noise_size, channels):
 
 
 
+def save_images(cnt, noise):
+    image_array = np.full((
+        PREVIEW_MARGIN + (PREVIEW_ROWS * (IMAGE_SIZE + PREVIEW_MARGIN)),
+        PREVIEW_MARGIN + (PREVIEW_COLS * (IMAGE_SIZE + PREVIEW_MARGIN)), 3),
+        255, dtype=np.uint8)
+    generated_images = generator.predict(noise)
+    generated_images = 0.5 * generated_images + 0.5
+    image_count = 0
+    for row in range(PREVIEW_ROWS):
+        for col in range(PREVIEW_COLS):
+            r = row * (IMAGE_SIZE + PREVIEW_MARGIN) + PREVIEW_MARGIN
+            c = col * (IMAGE_SIZE + PREVIEW_MARGIN) + PREVIEW_MARGIN
+            image_array[r:r + IMAGE_SIZE, c:c +
+                        IMAGE_SIZE] = generated_images[image_count] * 255
+            image_count += 1
+
+    output_path = 'output'
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+    fname = "trained-"+ str(cnt) +".png"
+    filename = os.path.join(output_path, fname)
+    im = Image.fromarray(image_array)
+    im.save(filename)
+
+
 image_shape = (IMAGE_SIZE, IMAGE_SIZE, IMAGE_CHANNELS)
 optimizer = Adam(1.5e-4, 0.5)
 discriminator = build_discriminator(image_shape)
@@ -148,33 +172,8 @@ discriminator_metric_generated = discriminator.train_on_batch(x_fake, y_fake)
 
 discriminator_metric = 0.5 * np.add(discriminator_metric_real, discriminator_metric_generated)
 generator_metric = combined.train_on_batch(noise, y_real)
-if epoch % SAVE_FREQ == 0:
-    save_images(cnt, fixed_noise)
-    cnt += 1
-    print(f'{epoch} epoch, Discriminator accuracy: {100*  discriminator_metric[1]}, Generator accuracy: {100 * generator_metric[1]}')
 
-
-
-def save_images(cnt, noise):
-    image_array = np.full((
-        PREVIEW_MARGIN + (PREVIEW_ROWS * (IMAGE_SIZE + PREVIEW_MARGIN)),
-        PREVIEW_MARGIN + (PREVIEW_COLS * (IMAGE_SIZE + PREVIEW_MARGIN)), 3),
-        255, dtype=np.uint8)
-    generated_images = generator.predict(noise)
-    generated_images = 0.5 * generated_images + 0.5
-    image_count = 0
-    for row in range(PREVIEW_ROWS):
-        for col in range(PREVIEW_COLS):
-            r = row * (IMAGE_SIZE + PREVIEW_MARGIN) + PREVIEW_MARGIN
-            c = col * (IMAGE_SIZE + PREVIEW_MARGIN) + PREVIEW_MARGIN
-            image_array[r:r + IMAGE_SIZE, c:c +
-                        IMAGE_SIZE] = generated_images[image_count] * 255
-            image_count += 1
-
-    output_path = 'output'
-    if not os.path.exists(output_path):
-        os.makedirs(output_path)
-
-    filename = os.path.join(output_path, f"trained-{cnt}.png")
-    im = Image.fromarray(image_array)
-    im.save(filename)
+save_images(cnt, fixed_noise)
+cnt += 1
+#print(f'{epoch} epoch, Discriminator accuracy: {100*  discriminator_metric[1]}, Generator accuracy: {100 * generator_metric[1]}')
+print("epoch is:", epoch, ", Discriminator accuracy", 100*  discriminator_metric[1], ", Generator accuracy is", 100 * generator_metric[1])
